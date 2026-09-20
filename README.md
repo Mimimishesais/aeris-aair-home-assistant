@@ -35,7 +35,7 @@ The guide below and the software linked to here are for flashing from Windows. I
 
 4.  [Free Particle CLI Account](<https://login.particle.io/signup>)
 
-5.  [Particle Bootloader update](<https://github.com/particle-iot/device-os/releases/download/v3.3.0/photon-bootloader%403.3.0%2Blto.bin>)
+5.  [Particle Bootloader update](<https://github.com/particle-iot/device-os/releases/download/v3.3.1/photon-bootloader%403.3.1%2Blto.bin>) — the v3 firmware needs Device OS **3.3.1 or newer** (system module version 3302; 3.3.0 is 3301 and is not enough).
 
 6.  [Replacement Software Binary](https://github.com/mjaymeyer/aeris-aair-home-assistant/releases) (unless building from source)
 
@@ -186,6 +186,8 @@ manufacturer.
 
 ```particle update```
 
+3.  Check the result with `particle serial inspect` (device in normal mode, not DFU). The v3 firmware depends on **system part 2 version 3302 or newer (Device OS 3.3.1+)**. My unit (2020 production) shipped with Device OS 0.5.0 (version 21); later production runs may be newer. Device OS 3.3.0 reports 3301, which is *not* enough — the app will not start (status LED blinks blue, no display, no `Aeris-xxxx` network).
+
 <img src="./media/image19.png" alt="" width="600"/>
 
 <img src="./media/image20a.png" alt="" width="600"/>
@@ -193,6 +195,35 @@ manufacturer.
 NOTE: Your device may seem to freeze (like below) when it gets to "Switching device to normal mode", if it says it fails after this do not panic, it is likely fine. You likely don't need to update again but are welcome to put your device back in DFU mode and try it again if you'd like, though I don't believe anything else needs updated. My device would seemingly fail after the switch back to normal mode but the software was definitely good to go regardless.
 
 <img src="./media/image21a.png" alt="" width="600"/>
+
+### Mac / Linux: offline flashing (no Particle account)
+
+Tested on macOS with dfu-util 0.11 and Particle CLI 3.50 (`npm install particle-cli`). No Zadig or driver step is needed.
+Do **not** just run `particle flash --local aerisFirmware.bin` on a stock unit: on an early unit still running Device OS 0.5.0
+(mine is from 2020) it writes only the application and leaves the system firmware untouched, so the unit ends up with a blue blinking LED, a dark display and
+no `Aeris-xxxx` network. Write the Device OS system parts explicitly instead.
+
+1.  Download from the [Device OS 3.3.1 release](https://github.com/particle-iot/device-os/releases/tag/v3.3.1):
+    `photon-system-part1@3.3.1.bin`, `photon-system-part2@3.3.1.bin`, `photon-bootloader@3.3.1+lto.bin`.
+
+2.  Put the unit in DFU mode (blinking yellow) and take the backup as described above:
+
+```dfu-util -d 2b04:d006 -a 0 -s 0x08020000:0xE0000 -U original_firmware.bin```
+
+3.  Still in DFU mode, write the two system parts and then the application (`:leave` reboots the unit):
+
+```
+dfu-util -d 2b04:d006 -a 0 -s 0x08020000 -D photon-system-part1@3.3.1.bin
+dfu-util -d 2b04:d006 -a 0 -s 0x08060000 -D photon-system-part2@3.3.1.bin
+dfu-util -d 2b04:d006 -a 0 -s 0x080A0000:leave -D aerisFirmware.bin
+```
+
+4.  Once the unit is back in normal mode (`particle usb list` shows it as `Photon`), update the bootloader:
+
+```particle flash --local photon-bootloader@3.3.1+lto.bin```
+
+5.  Verify: `particle serial inspect` should show bootloader 1100, system parts 3302 / 3302 and user part 6.
+    The display then shows the setup screen described below.
 
 ## Flashing the compiled binary
 
