@@ -25,7 +25,7 @@ The steps below are not complicated to do but make sure you read through everyth
 
 ## Software Needed:
 
-The guide below and the software linked to here are for flashing from Windows. If you are using Mac or Linux the software is definitely there, but you'll need to locate the appropriate versions yourself.
+The guide below and the software linked to here are for flashing from Windows. If using Mac or Linux then after getting access to the board navigate down to Mac / Linux section.
 
 1.  [Zadig](<https://zadig.akeo.ie/>)
 
